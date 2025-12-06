@@ -1,0 +1,29 @@
+# Wrangler
+.wrangler/
+wrangler.toml.local
+
+# Local development environment variables (secrets)
+.dev.vars
+
+# Node modules (if you add dependencies later)
+node_modules/
+
+# Logs
+*.log
+.wrangler/logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
