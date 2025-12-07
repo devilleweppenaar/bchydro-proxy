@@ -32,9 +32,10 @@ export default {
     }
 
     try {
-      // Get coordinates from secrets
-      const userLat = parseFloat(env.LATITUDE);
-      const userLon = parseFloat(env.LONGITUDE);
+      // Get coordinates from query parameters
+      const url = new URL(request.url);
+      const userLat = parseFloat(url.searchParams.get("lat") || "");
+      const userLon = parseFloat(url.searchParams.get("lon") || "");
 
       // Get cache duration (default 5 minutes = 300 seconds)
       const cacheMaxAge = parseInt(env.CACHE_MAX_AGE || "300");
@@ -42,11 +43,12 @@ export default {
       if (isNaN(userLat) || isNaN(userLon)) {
         return new Response(
           JSON.stringify({
-            error: "Invalid coordinates configured",
+            error:
+              "Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters",
             outages: [],
           }),
           {
-            status: 500,
+            status: 400,
             headers: {
               ...corsHeaders,
               "Content-Type": "application/json",

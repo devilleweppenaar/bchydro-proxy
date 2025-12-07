@@ -6,7 +6,7 @@ A Cloudflare Worker that checks if BC Hydro power outages affect your specific l
 
 - Fetches BC Hydro outage data
 - Filters outages using point-in-polygon detection
-- Returns only outages affecting YOUR coordinates
+- Returns only outages affecting the coordinates you provide
 - Caches results for 5 minutes to reduce API calls
 
 ## Setup
@@ -15,24 +15,30 @@ A Cloudflare Worker that checks if BC Hydro power outages affect your specific l
 
 Push this repo to GitHub. Cloudflare Workers will auto-deploy when connected.
 
-### 2. Set Your Coordinates
+### 2. (Optional) Adjust Cache Duration
 
-In Cloudflare Dashboard:
+In Cloudflare Dashboard, you can optionally adjust the cache duration (default is 300 seconds / 5 minutes):
 1. Go to: **Workers & Pages** > **bchydro-proxy** > **Settings** > **Variables**
-2. Add two encrypted secrets:
-   - `LATITUDE`: Your latitude (e.g., `49.2827`)
-   - `LONGITUDE`: Your longitude (e.g., `-123.1207`)
-3. Click **Encrypt** for each secret
-
-**Optional**: Adjust cache duration (default is 300 seconds / 5 minutes):
-- Add a plain text variable: `CACHE_MAX_AGE` (e.g., `600` for 10 minutes)
-- Don't encrypt this one - it's not sensitive
+2. Add a plain text variable: `CACHE_MAX_AGE` (e.g., `600` for 10 minutes)
+3. Don't encrypt this - it's not sensitive
 
 ### 3. Test It
 
 ```bash
-curl https://your-worker.workers.dev/
+curl "https://your-worker.workers.dev/?lat=49.2827&lon=-123.1207"
 ```
+
+## Usage
+
+Call the worker with your coordinates as query parameters:
+
+```bash
+curl "https://your-worker.workers.dev/?lat=49.2827&lon=-123.1207"
+```
+
+**Query Parameters:**
+- `lat` - Your latitude (required)
+- `lon` - Your longitude (required)
 
 ## Response Format
 
@@ -98,10 +104,12 @@ curl https://your-worker.workers.dev/
 ## Use with Apple Shortcuts
 
 ```
-Get contents of [your-worker-url]
+Get contents of [your-worker-url]?lat=49.2827&lon=-123.1207
 If [affectingYou] > 0:
     Show notification "Power outage detected!"
 ```
+
+**Tip:** Store your coordinates in a Shortcuts variable for easy reuse.
 
 ## How Caching Works
 
@@ -118,8 +126,8 @@ Next requests (within cache period): `cached: true` (serves from cache)
 
 ## Privacy
 
-- Your coordinates are encrypted Cloudflare secrets
-- Not visible in code or logs
+- Your coordinates are passed as query parameters (only visible to you and Cloudflare)
+- No data is stored - coordinates are only used for filtering
 - Only filtered results are returned (not all BC outages)
 
 ## Files
