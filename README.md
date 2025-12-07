@@ -1,62 +1,53 @@
-# BC Hydro Outage Proxy
+# BC Hydro Proxy Worker
 
-A Cloudflare Worker that checks if BC Hydro power outages affect your specific location.
+A Cloudflare Worker that proxies BC Hydro outage data and filters outages by geographic location.
 
-## What It Does
+## Features
 
-- Fetches BC Hydro outage data
-- Filters outages using point-in-polygon detection
-- Returns only outages affecting the coordinates you provide
-- Caches results for 5 minutes to reduce API calls
+- **Location-based filtering**: Query outages affecting specific coordinates (latitude/longitude)
+- **Server-side caching**: Configurable cache TTL to reduce API calls
+- **CORS enabled**: Works with web apps and Apple Shortcuts
+- **Crew status details**: Human-readable descriptions of crew status codes
+- **Fully tested**: 80+ unit tests covering all helper functions
 
-## Setup
+## Project Structure
 
-### 1. Deploy to Cloudflare
+```
+src/
+  ├── index.js              # Main Worker entry point
+  └── helpers/              # Coordinate validation, polygon geometry, status mappings
 
-Push this repo to GitHub. Cloudflare Workers will auto-deploy when connected.
+tests/                       # Unit tests for all helper modules
+```
 
-### 2. (Optional) Adjust Cache Duration
-
-In Cloudflare Dashboard, you can optionally adjust the cache duration (default is 300 seconds / 5 minutes):
-1. Go to: **Workers & Pages** > **bchydro-proxy** > **Settings** > **Variables**
-2. Add a plain text variable: `CACHE_MAX_AGE` (e.g., `600` for 10 minutes)
-3. Don't encrypt this - it's not sensitive
-
-### 3. Test It
+## Installation
 
 ```bash
-curl "https://your-worker.workers.dev/?lat=49.2827&lon=-123.1207"
+npm install
 ```
 
-## Usage
+## Local Development
 
-Call the worker with your coordinates as query parameters:
+### Running the Worker Locally
+
+Start the local development server with Wrangler:
 
 ```bash
-curl "https://your-worker.workers.dev/?lat=49.2827&lon=-123.1207"
+npm run dev
 ```
 
-**Query Parameters:**
-- `lat` - Your latitude (required)
-- `lon` - Your longitude (required)
+The worker will be available at `http://localhost:8787/?lat=X&lon=Y`
 
-## Response Format
+For more details on local development, testing, and debugging, see the [Wrangler documentation](https://developers.cloudflare.com/workers/testing/local-development/).
 
-### No Outage
-```json
-{
-  "cached": true,
-  "coordinates": {
-    "latitude": 49.2827,
-    "longitude": -123.1207
-  },
-  "totalOutages": 14,
-  "affectingYou": 0,
-  "outages": []
-}
+### Example Request
+
+```bash
+curl "http://localhost:8787/?lat=49.2827&lon=-123.1207" | jq .
 ```
 
-### Outage Detected
+### Example Response
+
 ```json
 {
   "cached": false,
@@ -64,79 +55,106 @@ curl "https://your-worker.workers.dev/?lat=49.2827&lon=-123.1207"
     "latitude": 49.2827,
     "longitude": -123.1207
   },
-  "totalOutages": 15,
-  "affectingYou": 1,
+  "totalOutages": 42,
+  "affectingYou": 2,
   "outages": [
     {
-      "id": 2681104,
+      "id": "outage-123",
       "municipality": "Vancouver",
-      "area": "1200 block Example St",
-      "cause": "Tree down across our wires",
-      "numCustomersOut": 245,
+      "area": "Downtown",
+      "cause": "Equipment failure",
+      "numCustomersOut": 1500,
       "crewStatus": "ONSITE",
-      "crewStatusDescription": "Crew on-site",
-      "crewStatusDetail": "A crew is working to investigate the cause...",
-      "dateOff": 1733515200000,
-      "dateOn": 1733522400000,
-      "crewEtr": 1733522400000,
-      "latitude": 49.2827,
-      "longitude": -123.1207
+      "crewStatusDetail": "A crew is working to investigate...",
+      "dateOff": "2025-01-15T14:30:00Z",
+      "dateOn": "2025-01-15T16:00:00Z",
+      "lastUpdated": "2025-01-15T14:45:00Z",
+      "regionName": "Lower Mainland",
+      "showEtr": true,
+      "crewEtr": "2025-01-15T16:00:00Z",
+      "latitude": 49.283,
+      "longitude": -123.121
     }
   ]
 }
 ```
 
-## Key Fields
+## Testing
 
-- `cached`: `true` if served from cache (< 5 min old), `false` if fresh from BC Hydro
-- `affectingYou`: Number of outages at your location
-- `totalOutages`: Total outages across BC
-- `crewStatusDetail`: Human-readable crew status explanation
+Run the test suite:
 
-## Crew Status Meanings
-
-- **NOT_ASSIGNED**: No crew assigned yet
-- **ASSIGNED**: Crew assigned, on their list
-- **ENROUTE**: Crew on their way
-- **ONSITE**: Crew working on-site
-- **SUSPENDED**: Needs different equipment
-
-## Use with Apple Shortcuts
-
-```
-Get contents of [your-worker-url]?lat=49.2827&lon=-123.1207
-If [affectingYou] > 0:
-    Show notification "Power outage detected!"
+```bash
+npm test                    # Run all tests
+npm run test:watch         # Run tests in watch mode
 ```
 
-**Tip:** Store your coordinates in a Shortcuts variable for easy reuse.
+## Configuration
 
-## How Caching Works
+Update `CACHE_MAX_AGE` in `wrangler.toml` to customize the server cache duration (default: 300 seconds).
 
-The worker uses **Cloudflare's Cache API** (built into Workers, no UI config needed):
+## API
 
-- **Server cache**: Configurable via `CACHE_MAX_AGE` env var (default: 300 seconds / 5 minutes)
-- **Client cache**: 1 minute - reduces calls to your worker
-- **`cached` field**: Shows if response came from cache
+### Query Parameters
 
-First request: `cached: false` (fetches fresh data)  
-Next requests (within cache period): `cached: true` (serves from cache)
+- `lat` (required): Latitude (-90 to 90)
+- `lon` (required): Longitude (-180 to 180)
 
-**To change cache duration**: Set `CACHE_MAX_AGE` variable in Cloudflare Dashboard (in seconds)
+### Response Fields
 
-## Privacy
+- `cached` - Boolean indicating if response was served from cache
+- `coordinates` - Echo of requested coordinates
+- `totalOutages` - Total number of active outages in BC
+- `affectingYou` - Number of outages affecting the specified coordinates
+- `outages` - Array of affected outages with detailed information
 
-- Your coordinates are passed as query parameters (only visible to you and Cloudflare)
-- No data is stored - coordinates are only used for filtering
-- Only filtered results are returned (not all BC outages)
+### Error Responses
 
-## Files
+**Missing/Invalid Coordinates** (400):
+```json
+{
+  "error": "Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters",
+  "outages": []
+}
+```
 
-- `worker.js` - Main worker code
-- `wrangler.toml` - Cloudflare configuration
-- `.dev.vars` - Local development secrets (gitignored)
-- `.gitignore` - Keeps secrets out of git
+**Server Error** (500):
+```json
+{
+  "error": "Error message details",
+  "outages": []
+}
+```
+
+## Data Source
+
+The worker proxies data from BC Hydro's public API:
+```
+https://www.bchydro.com/power-outages/app/outages-map-data.json
+```
+
+## Caching Strategy
+
+- **Server cache**: Configurable via `CACHE_MAX_AGE` (default: 300 seconds)
+- **Client cache**: `Cache-Control: public, max-age=60` (capped at 1 minute)
+- **Cache indicator**: `cached` field in response shows if data came from cache
+
+First request: `cached: false`  
+Subsequent requests (within TTL): `cached: true`
+
+## Deployment
+
+For deployment instructions, see the [Cloudflare Workers deployment documentation](https://developers.cloudflare.com/workers/deployment-trigger/).
+
+## CI/CD
+
+GitHub Actions runs automated checks on every push and pull request:
+
+- **Linting**: Code quality checks with ESLint
+- **Testing**: Tests run against Node.js 22.x and 24.x (LTS versions)
+- **Gating**: All checks must pass before code can be deployed
+
+Checks run on all pushes to `main` and pull requests into `main`. For more details, see the workflow configuration in `.github/workflows/ci.yaml`.
 
 ## License
 
-See LICENSE file.
+Unlicense (public domain). See [LICENSE](LICENSE) file for details.

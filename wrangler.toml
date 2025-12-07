@@ -1,8 +1,11 @@
 name = "bchydro-proxy"
-main = "worker.js"
-compatibility_date = "2025-12-06"
+main = "src/index.js"
+compatibility_date = "2025-07-18"
 
 # Environment variables (non-sensitive)
 # These can be set in Cloudflare Dashboard: Settings > Variables
-[vars]
-CACHE_MAX_AGE = "300"  # Cache duration in seconds (default: 5 minutes)
+[env.production]
+vars = { CACHE_MAX_AGE = "300" }
+
+[env.development]
+vars = { CACHE_MAX_AGE = "60" }
