@@ -127,8 +127,58 @@ export default {
     }
 
     try {
-      // Get coordinates from query parameters
       const url = new URL(request.url);
+
+      // Check test mode FIRST (before any validation)
+      const testParam = url.searchParams.get("test");
+      if (testParam) {
+        const testModeStatus = getTestMode(env, testParam);
+
+        // If test mode is enabled but param is invalid, return error
+        if (testModeStatus.enabled && !testModeStatus.valid) {
+          return new Response(
+            JSON.stringify({
+              error: "Invalid test mode. Valid options: outage, no-outage, multiple",
+              outages: [],
+            }),
+            {
+              status: 400,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        // If test mode is valid, use test data (skip all validation)
+        if (testModeStatus.mode) {
+          // eslint-disable-next-line no-console
+          console.log(`Test mode enabled: ${testModeStatus.mode}`);
+          const allOutages = getTestOutages(testModeStatus.mode);
+
+          // Use generic Vancouver coordinates for test mode
+          const testCoords = { lat: 49.2827, lon: -123.1207 };
+
+          const responseData = buildResponse(
+            false, // Test data is never cached
+            testCoords.lat,
+            testCoords.lon,
+            allOutages,
+            parseInt(env.CACHE_MAX_AGE || "300"),
+          );
+
+          return new Response(JSON.stringify(responseData, null, 2), {
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+              "Cache-Control": "no-cache", // Don't cache test responses
+            },
+          });
+        }
+      }
+
+      // Normal mode: validate coordinates
       const coords = parseCoordinates(
         url.searchParams.get("lat"),
         url.searchParams.get("lon"),
@@ -171,25 +221,9 @@ export default {
         );
       }
 
-      // Check if test mode is enabled
-      const testMode = getTestMode(env, url.searchParams.get("test"));
-      let allOutages;
-      let cacheHit = false;
-      let cacheMaxAge = parseInt(env.CACHE_MAX_AGE || "300");
-
-      if (testMode) {
-        // Use test data instead of fetching from BC Hydro
-        // eslint-disable-next-line no-console
-        console.log(`Test mode enabled: ${testMode}`);
-        allOutages = getTestOutages(testMode);
-        cacheHit = false; // Test data is never cached
-      } else {
-        // Get outages with caching
-        const outagesData = await getOutagesWithCache(env);
-        allOutages = outagesData.allOutages;
-        cacheHit = outagesData.cacheHit;
-        cacheMaxAge = outagesData.cacheMaxAge;
-      }
+      // Get outages with caching
+      const { allOutages, cacheHit, cacheMaxAge } =
+        await getOutagesWithCache(env);
 
       // Build response
       const responseData = buildResponse(
