@@ -10,6 +10,28 @@ This document provides guidance for future development and maintenance of this p
 
 This is a Cloudflare Worker that proxies BC Hydro outage data and provides location-based filtering for outages. It fetches outage information, filters by geographic area (using point-in-polygon algorithms), and returns structured data with crew status information.
 
+## API Design Principles
+
+### Consistent Response Shape
+All API responses, including errors, must include an `outages` array:
+
+```javascript
+{
+  "error": "Error message",  // Present only on errors
+  "outages": []              // Always present (empty array on errors)
+}
+```
+
+**Rationale:**
+- **Predictable structure**: Clients can always expect `response.outages` to be an array
+- **Simplified client code**: No need for defensive checks like `response.outages || []`
+- **Standard REST practice**: Error responses include expected data structure, just empty
+
+**Implementation:**
+- All error responses (400, 500) must include `"outages": []`
+- Success responses include populated `outages` array
+- Never omit the `outages` field from any response
+
 ## Core Principles
 
 ### 1. Runtime Compatibility
