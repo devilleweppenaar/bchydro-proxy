@@ -3,34 +3,56 @@ import assert from "node:assert";
 import { getTestMode, getTestOutages } from "../src/helpers/test-mode.js";
 
 test("getTestMode", async (t) => {
-  await t.test("returns null when TEST_MODE is not enabled", () => {
+  await t.test("returns disabled status when TEST_MODE is not enabled", () => {
     const env = { TEST_MODE: "false" };
-    assert.strictEqual(getTestMode(env, "outage"), null);
-    assert.strictEqual(getTestMode(env, "no-outage"), null);
-    assert.strictEqual(getTestMode(env, "multiple"), null);
+    const result = getTestMode(env, "outage");
+    assert.strictEqual(result.enabled, false);
+    assert.strictEqual(result.valid, true);
+    assert.strictEqual(result.mode, null);
   });
 
-  await t.test("returns null when TEST_MODE is not set", () => {
+  await t.test("returns disabled status when TEST_MODE is not set", () => {
     const env = {};
-    assert.strictEqual(getTestMode(env, "outage"), null);
+    const result = getTestMode(env, "outage");
+    assert.strictEqual(result.enabled, false);
+    assert.strictEqual(result.valid, true);
+    assert.strictEqual(result.mode, null);
   });
 
   await t.test(
     "returns test mode when TEST_MODE is enabled and param is valid",
     () => {
       const env = { TEST_MODE: "true" };
-      assert.strictEqual(getTestMode(env, "outage"), "outage");
-      assert.strictEqual(getTestMode(env, "no-outage"), "no-outage");
-      assert.strictEqual(getTestMode(env, "multiple"), "multiple");
+
+      let result = getTestMode(env, "outage");
+      assert.strictEqual(result.enabled, true);
+      assert.strictEqual(result.valid, true);
+      assert.strictEqual(result.mode, "outage");
+
+      result = getTestMode(env, "no-outage");
+      assert.strictEqual(result.enabled, true);
+      assert.strictEqual(result.valid, true);
+      assert.strictEqual(result.mode, "no-outage");
+
+      result = getTestMode(env, "multiple");
+      assert.strictEqual(result.enabled, true);
+      assert.strictEqual(result.valid, true);
+      assert.strictEqual(result.mode, "multiple");
     },
   );
 
-  await t.test("returns null for invalid test mode parameter", () => {
+  await t.test("returns invalid status for invalid test mode parameter", () => {
     const env = { TEST_MODE: "true" };
-    assert.strictEqual(getTestMode(env, "invalid"), null);
-    assert.strictEqual(getTestMode(env, ""), null);
-    assert.strictEqual(getTestMode(env, null), null);
-    assert.strictEqual(getTestMode(env, undefined), null);
+
+    let result = getTestMode(env, "invalid");
+    assert.strictEqual(result.enabled, true);
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.mode, null);
+
+    result = getTestMode(env, "");
+    assert.strictEqual(result.enabled, true);
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.mode, null);
   });
 });
 

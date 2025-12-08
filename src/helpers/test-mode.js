@@ -11,11 +11,16 @@ function getVancouverDowntownPolygon() {
   // Box covering downtown Vancouver area
   // Format: [lon, lat, lon, lat, ...] (BC Hydro polygon format)
   return [
-    -123.15, 49.27, // Southwest corner
-    -123.1, 49.27, // Southeast corner
-    -123.1, 49.29, // Northeast corner
-    -123.15, 49.29, // Northwest corner
-    -123.15, 49.27, // Close the polygon
+    -123.15,
+    49.27, // Southwest corner
+    -123.1,
+    49.27, // Southeast corner
+    -123.1,
+    49.29, // Northeast corner
+    -123.15,
+    49.29, // Northwest corner
+    -123.15,
+    49.27, // Close the polygon
   ];
 }
 
@@ -26,11 +31,16 @@ function getVancouverDowntownPolygon() {
 function getVictoriaPolygon() {
   // Box covering Victoria area (48.4284, -123.3656)
   return [
-    -123.4, 48.4, // Southwest corner
-    -123.3, 48.4, // Southeast corner
-    -123.3, 48.45, // Northeast corner
-    -123.4, 48.45, // Northwest corner
-    -123.4, 48.4, // Close the polygon
+    -123.4,
+    48.4, // Southwest corner
+    -123.3,
+    48.4, // Southeast corner
+    -123.3,
+    48.45, // Northeast corner
+    -123.4,
+    48.45, // Northwest corner
+    -123.4,
+    48.4, // Close the polygon
   ];
 }
 
@@ -41,11 +51,16 @@ function getVictoriaPolygon() {
 function getKelownaPolygon() {
   // Box covering Kelowna area (49.8880, -119.4960)
   return [
-    -119.55, 49.85, // Southwest corner
-    -119.45, 49.85, // Southeast corner
-    -119.45, 49.93, // Northeast corner
-    -119.55, 49.93, // Northwest corner
-    -119.55, 49.85, // Close the polygon
+    -119.55,
+    49.85, // Southwest corner
+    -119.45,
+    49.85, // Southeast corner
+    -119.45,
+    49.93, // Northeast corner
+    -119.55,
+    49.93, // Northwest corner
+    -119.55,
+    49.85, // Close the polygon
   ];
 }
 
@@ -144,8 +159,8 @@ export function getTestOutages(testMode) {
         latitude: 49.285,
         longitude: -123.13,
         polygon: [
-          -123.16, 49.275, -123.12, 49.275, -123.12, 49.295, -123.16,
-          49.295, -123.16, 49.275,
+          -123.16, 49.275, -123.12, 49.275, -123.12, 49.295, -123.16, 49.295,
+          -123.16, 49.275,
         ],
       },
       {
@@ -177,19 +192,16 @@ export function getTestOutages(testMode) {
  * Check if test mode is enabled and valid
  * @param {object} env - Environment variables
  * @param {string} testParam - Test query parameter value
- * @returns {string|null} Test mode type if valid, null otherwise
+ * @returns {{enabled: boolean, valid: boolean, mode: string|null}} Test mode status
  */
 export function getTestMode(env, testParam) {
-  // Test mode must be explicitly enabled via environment variable
-  if (env.TEST_MODE !== "true") {
-    return null;
-  }
-
-  // Validate test parameter
+  const isEnabled = env.TEST_MODE === "true";
   const validTestModes = ["outage", "no-outage", "multiple"];
-  if (validTestModes.includes(testParam)) {
-    return testParam;
-  }
+  const isValid = validTestModes.includes(testParam);
 
-  return null;
+  return {
+    enabled: isEnabled,
+    valid: isValid,
+    mode: isEnabled && isValid ? testParam : null,
+  };
 }
