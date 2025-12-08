@@ -70,7 +70,7 @@ wrangler.toml       # Cloudflare Worker configuration
 ### 9. Privacy & Security (Mandatory)
 - **No personal information**: Never commit home addresses, personal coordinates, or any private details
 - **No account credentials**: API keys, tokens, passwords, account IDs must never be in code or git history
-- **Generic examples**: Use well-known public locations for examples (downtown Vancouver: 49.2827, -123.1207; Victoria; Kelowna, etc.)
+- **Generic examples**: Use well-known public locations for examples (downtown Vancouver: 49.2827, -123.1207; Victoria; Nanaimo, etc.)
 - **Sensitive config**: Store in environment variables or Cloudflare Dashboard, never hardcoded or committed
 - **No deployment specifics**: Don't reference specific Cloudflare zones, domains, or account-specific routing
 - **Code review for commits**: Before pushing, verify no sensitive data leaked (check diffs carefully)
@@ -95,7 +95,7 @@ wrangler.toml       # Cloudflare Worker configuration
 1. **Before writing code**: Ensure the change aligns with the project's purpose
 2. **Review for sensitive data**: Before coding, check that examples/test data don't contain personal info (addresses, account details, API keys)
 3. **Write tests first** (TDD recommended): Tests should cover the new functionality
-   - Use generic coordinates for BC locations (Vancouver: 49.2827/-123.1207, Victoria, Kelowna, etc.)
+   - Use generic coordinates for BC locations (Vancouver: 49.2827/-123.1207, Victoria, Nanaimo, etc.)
    - Never hardcode real personal addresses or private details
 4. **Lint your code**: Run `npm run lint` to check for issues
    - Fix all lint errors (red) — code will not pass CI without passing linting
@@ -112,15 +112,20 @@ wrangler.toml       # Cloudflare Worker configuration
 10. **Review your diff before pushing**: Scan `git diff` for any accidentally committed credentials, personal addresses, or account details
 11. **Verify CI passes**: Before merging, ensure GitHub Actions linting and test jobs succeed on all tested Node.js versions
 
-## Future Considerations
+## Caching Strategy
 
-- **Type Safety**: Consider TypeScript if type errors become a concern
-- **Code Coverage**: Add coverage reporting and thresholds
-- **Prettier**: Consider adding Prettier for automatic code formatting alongside ESLint
-- **Secret Scanning**: Add pre-commit hooks (e.g., git-secrets, detect-secrets) to prevent accidental credential leaks
-- **Caching Strategy**: Monitor and optimize cache TTL and behavior
-- **Rate Limiting**: Consider DDoS/rate-limiting rules if public traffic becomes heavy
-- **Monitoring**: Add Cloudflare Analytics or Worker Tail integration for production insights
+BC Hydro outage data is updated frequently (roughly every 5-10 minutes). To balance not hitting their servers too hard while serving reasonably fresh data:
+
+- **Cache TTL**: 5 minutes (`Cache-Control: public, max-age=300`)
+- **Rationale**: Users typically check outage status every 5-10 minutes, and a 5-minute cache prevents excessive backend requests
+- **Implementation**: Set cache headers in Worker responses; Cloudflare will automatically cache
+
+## Secret Scanning
+
+To prevent accidental commits of credentials or sensitive data:
+
+- **Use GitHub's built-in secret scanning**: Automatically enabled for public repositories
+- **Optional: Add pre-commit hooks**: Consider `detect-secrets` or `git-secrets` for local validation before commits
 
 ## Quick Reference
 
