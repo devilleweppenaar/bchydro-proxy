@@ -5,7 +5,7 @@ compatibility_date = "2025-07-18"
 # Environment variables (non-sensitive)
 # These can be set in Cloudflare Dashboard: Settings > Variables
 [env.production]
-vars = { CACHE_MAX_AGE = "300" }
+vars = { CACHE_MAX_AGE = "300", TEST_MODE = "false" }
 
 [env.development]
-vars = { CACHE_MAX_AGE = "60" }
+vars = { CACHE_MAX_AGE = "60", TEST_MODE = "true" }

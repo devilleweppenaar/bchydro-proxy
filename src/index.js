@@ -1,6 +1,7 @@
-import { parseCoordinates } from "./helpers/coordinates.js";
+import { parseCoordinates, isInBCArea } from "./helpers/coordinates.js";
 import { isPointInPolygon } from "./helpers/polygon.js";
 import { getCrewStatusDetail } from "./helpers/crew.js";
+import { getTestMode, getTestOutages } from "./helpers/test-mode.js";
 
 /**
  * CORS headers for cross-origin requests
@@ -152,9 +153,43 @@ export default {
 
       const { lat: userLat, lon: userLon } = coords;
 
-      // Get outages with caching
-      const { allOutages, cacheHit, cacheMaxAge } =
-        await getOutagesWithCache(env);
+      // Validate coordinates are within BC Hydro service area
+      if (!isInBCArea(userLat, userLon)) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Coordinates outside BC Hydro service area (British Columbia, Canada)",
+            outages: [],
+          }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      // Check if test mode is enabled
+      const testMode = getTestMode(env, url.searchParams.get("test"));
+      let allOutages;
+      let cacheHit = false;
+      let cacheMaxAge = parseInt(env.CACHE_MAX_AGE || "300");
+
+      if (testMode) {
+        // Use test data instead of fetching from BC Hydro
+        // eslint-disable-next-line no-console
+        console.log(`Test mode enabled: ${testMode}`);
+        allOutages = getTestOutages(testMode);
+        cacheHit = false; // Test data is never cached
+      } else {
+        // Get outages with caching
+        const outagesData = await getOutagesWithCache(env);
+        allOutages = outagesData.allOutages;
+        cacheHit = outagesData.cacheHit;
+        cacheMaxAge = outagesData.cacheMaxAge;
+      }
 
       // Build response
       const responseData = buildResponse(
