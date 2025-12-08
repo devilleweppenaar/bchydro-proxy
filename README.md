@@ -98,6 +98,10 @@ Update `CACHE_MAX_AGE` in `wrangler.toml` to customize the server cache duration
 
 - `lat` (required): Latitude (-90 to 90)
 - `lon` (required): Longitude (-180 to 180)
+- `test` (optional): Test mode (requires `TEST_MODE=true` environment variable)
+  - `outage` - Simulate an outage affecting your coordinates
+  - `no-outage` - Simulate no outages affecting your coordinates
+  - `multiple` - Simulate multiple outages
 
 ### Response Fields
 
@@ -117,6 +121,14 @@ Update `CACHE_MAX_AGE` in `wrangler.toml` to customize the server cache duration
 }
 ```
 
+**Coordinates Outside BC Service Area** (400):
+```json
+{
+  "error": "Coordinates outside BC Hydro service area (British Columbia, Canada)",
+  "outages": []
+}
+```
+
 **Server Error** (500):
 ```json
 {
@@ -124,6 +136,37 @@ Update `CACHE_MAX_AGE` in `wrangler.toml` to customize the server cache duration
   "outages": []
 }
 ```
+
+## Test Mode
+
+Test mode allows you to simulate outage scenarios for testing without waiting for real outages.
+
+### Enabling Test Mode
+
+**Local Development:**
+Add `TEST_MODE=true` to your `.dev.vars` file (already configured by default).
+
+**Production:**
+Set `TEST_MODE=false` in Cloudflare Dashboard (default in `wrangler.toml`).
+
+### Using Test Mode
+
+Test mode is only available when `TEST_MODE=true`. Use the `test` query parameter:
+
+```bash
+# Simulate an outage affecting your coordinates
+curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=outage"
+
+# Simulate no outages affecting your coordinates (outage exists elsewhere in BC)
+curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=no-outage"
+
+# Simulate multiple outages (2 affecting you, 1 not)
+curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=multiple"
+```
+
+### Test Data
+
+All test data includes `(TEST DATA)` in the cause field to clearly identify simulated outages. Test mode bypasses the BC Hydro API and returns mock data instead.
 
 ## Data Source
 

@@ -45,6 +45,7 @@ wrangler.toml       # Cloudflare Worker configuration
 - **Coverage**: Helpers and worker logic should have unit tests
 - **Command**: `npm test` for running tests locally
 - **Watch mode**: `npm run test:watch` for development
+- **Integration testing**: Use `npm run dev` to start local Wrangler dev server with hot reloading, then test with `curl "http://localhost:8787/?lat=49.2827&lon=-123.1207"`
 - **CI**: GitHub Actions validates on Node.js 22.x and 24.x before deployment
 - **Workflow**: Write tests, run them locally, confirm they pass before pushing code
 - **Requirement**: All tests must pass locally before code is committed and pushed
@@ -70,7 +71,7 @@ wrangler.toml       # Cloudflare Worker configuration
 ### 9. Privacy & Security (Mandatory)
 - **No personal information**: Never commit home addresses, personal coordinates, or any private details
 - **No account credentials**: API keys, tokens, passwords, account IDs must never be in code or git history
-- **Generic examples**: Use well-known public locations for examples (downtown Vancouver: 49.2827, -123.1207; Victoria; Nanaimo, etc.)
+- **Generic examples**: Use well-known public locations for examples (downtown Vancouver: 49.2827, -123.1207; Victoria; Kelowna, etc.)
 - **Sensitive config**: Store in environment variables or Cloudflare Dashboard, never hardcoded or committed
 - **No deployment specifics**: Don't reference specific Cloudflare zones, domains, or account-specific routing
 - **Code review for commits**: Before pushing, verify no sensitive data leaked (check diffs carefully)
@@ -95,7 +96,7 @@ wrangler.toml       # Cloudflare Worker configuration
 1. **Before writing code**: Ensure the change aligns with the project's purpose
 2. **Review for sensitive data**: Before coding, check that examples/test data don't contain personal info (addresses, account details, API keys)
 3. **Write tests first** (TDD recommended): Tests should cover the new functionality
-   - Use generic coordinates for BC locations (Vancouver: 49.2827/-123.1207, Victoria, Nanaimo, etc.)
+   - Use generic coordinates for BC locations (Vancouver: 49.2827/-123.1207, Victoria, Kelowna, etc.)
    - Never hardcode real personal addresses or private details
 4. **Lint your code**: Run `npm run lint` to check for issues
    - Fix all lint errors (red) — code will not pass CI without passing linting
@@ -103,14 +104,41 @@ wrangler.toml       # Cloudflare Worker configuration
    - Use `npm run lint:fix` to automatically fix fixable issues
    - Linting is a quality gate — code will not pass CI without passing linting
 5. **Test locally**: Run `npm test` to ensure Node.js compatibility and confirm your changes work
-6. **Run tests and lint after every change**: Always verify both pass after modifying code
+6. **Integration test (optional but recommended)**: Start `npm run dev` in the background and test the worker with real requests
+   - Wrangler dev server has hot reloading enabled by default
+   - Test with: `curl "http://localhost:8787/?lat=49.2827&lon=-123.1207" | jq .`
+   - AI agents can run this in background mode and test changes automatically
+7. **Run tests and lint after every change**: Always verify both pass after modifying code
    - Use `npm run test:watch` for continuous test validation during development
    - Tests and linting must pass before committing code
-7. **Check structure**: Keep helpers separated and testable; don't add logic to `index.js` that should be in helpers
-8. **Update wrangler.toml if needed**: Use generic variable names; never include account-specific details or credentials
-9. **No hardcoded secrets**: Use environment variables for configuration (set in Cloudflare Dashboard, never in code)
-10. **Review your diff before pushing**: Scan `git diff` for any accidentally committed credentials, personal addresses, or account details
-11. **Verify CI passes**: Before merging, ensure GitHub Actions linting and test jobs succeed on all tested Node.js versions
+8. **Check structure**: Keep helpers separated and testable; don't add logic to `index.js` that should be in helpers
+9. **Update wrangler.toml if needed**: Use generic variable names; never include account-specific details or credentials
+10. **No hardcoded secrets**: Use environment variables for configuration (set in Cloudflare Dashboard, never in code)
+11. **Review your diff before pushing**: Scan `git diff` for any accidentally committed credentials, personal addresses, or account details
+12. **Verify CI passes**: Before merging, ensure GitHub Actions linting and test jobs succeed on all tested Node.js versions
+
+## BC Service Area Validation
+
+The worker validates that coordinates are within BC Hydro's service area (British Columbia, Canada) before fetching data:
+
+- **Bounds**: Latitude 48.3-60.0°N, Longitude -139.0 to -114.0°W
+- **Validation**: `isInBCArea()` function in `src/helpers/coordinates.js`
+- **Behavior**: Returns 400 error for coordinates outside BC, preventing unnecessary API calls
+- **Implementation**: Validation occurs after parsing coordinates but before fetching BC Hydro data
+
+## Test Mode
+
+Test mode allows simulating outage scenarios for testing without waiting for real outages:
+
+- **Environment Variable**: `TEST_MODE=true` (enabled in development, disabled in production)
+- **Query Parameter**: `?test=outage|no-outage|multiple`
+- **Implementation**: `src/helpers/testData.js` contains mock outage data
+- **Security**: Test mode only works when `TEST_MODE=true` is set in environment
+- **Test Data**: All mock outages include `(TEST DATA)` in the cause field
+- **Modes**:
+  - `outage` - Simulates 1 outage affecting downtown Vancouver (49.2827, -123.1207)
+  - `no-outage` - Simulates 1 outage in Victoria (doesn't affect Vancouver coordinates)
+  - `multiple` - Simulates 3 outages (2 affecting Vancouver, 1 in Kelowna)
 
 ## Caching Strategy
 
@@ -119,6 +147,7 @@ BC Hydro outage data is updated frequently (roughly every 5-10 minutes). To bala
 - **Cache TTL**: 5 minutes (`Cache-Control: public, max-age=300`)
 - **Rationale**: Users typically check outage status every 5-10 minutes, and a 5-minute cache prevents excessive backend requests
 - **Implementation**: Set cache headers in Worker responses; Cloudflare will automatically cache
+- **Test Mode**: Test data is never cached (always returns fresh mock data)
 
 ## Secret Scanning
 
