@@ -97,8 +97,29 @@ wrangler.toml       # Cloudflare Worker configuration
 - **Sensitive config**: Store in environment variables or Cloudflare Dashboard, never hardcoded or committed
 - **No deployment specifics**: Don't reference specific Cloudflare zones, domains, or account-specific routing
 - **Code review for commits**: Before pushing, verify no sensitive data leaked (check diffs carefully)
+- **No email addresses in commits**: Never commit personal email addresses in git history, code, or documentation
 
-### 10. Linting & Code Quality (Mandatory)
+### 10. Git & Commit Conventions (Mandatory)
+- **Commit Message Format**:
+  - Lowercase: Start with a lowercase letter
+  - Past tense: "updated readme" not "update readme"
+  - Descriptive: Be clear about what changed
+  - Concise: Keep under 50 characters to avoid truncation on GitHub
+  - No prefixes: No `feat:`, `fix:`, `chore:`, etc.
+  - No emojis
+  - Examples (good): `updated default env variables`, `fixed coordinate validation`, `added test mode`
+  - Examples (avoid): `Update README` (uppercase), `update readme` (imperative), `🎨 feat: add styling` (emoji + prefix)
+- **Commit Signing**: All commits must be signed (enforced by branch protection on main)
+- **Permission Before Committing**: AI agents must always ask for permission before committing changes — never automatically run `git commit` after making changes
+- **Rebasing & Commit Organization**: Rebasing is encouraged to organize commits into logical sets of changes
+  - Prefer clear, well-organized commit history over chronological accuracy
+  - Squash related changes into single commits
+  - Reorder commits to group related work
+  - Split commits that contain unrelated changes
+  - Rewrite commit messages for clarity
+  - Goal: Each commit represents a logical unit of work
+
+### 11. Linting & Code Quality (Mandatory)
 - **Tool**: ESLint with minimal, Node.js-friendly configuration
 - **Command**: `npm run lint` to check for issues
 - **Auto-fix**: `npm run lint:fix` to automatically fix fixable issues
