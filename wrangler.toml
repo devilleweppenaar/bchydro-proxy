@@ -1,9 +1,11 @@
 name = "bchydro-proxy"
-main = "src/index.js"
+main = "src/worker.js"
 compatibility_date = "2025-07-18"
 
+[build]
+command = "gleam build"
+
 # Environment variables (non-sensitive)
-# Default configuration (used by Cloudflare GitHub integration)
 [vars]
 CACHE_MAX_AGE = "300"
 TEST_MODE = "false"

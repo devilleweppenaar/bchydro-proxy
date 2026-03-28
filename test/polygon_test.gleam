@@ -1,5 +1,5 @@
-import polygon
 import gleeunit/should
+import polygon
 
 // A simple square polygon: [lon, lat, ...], covering the area
 // lon -1.0 to 1.0, lat -1.0 to 1.0
@@ -10,8 +10,7 @@ const triangle = [0.0, 2.0, 2.0, -2.0, -2.0, -2.0, 0.0, 2.0]
 
 // The Vancouver downtown box from the BC Hydro test fixtures
 const vancouver_box = [
-  -123.15, 49.27, -123.1, 49.27, -123.1, 49.29, -123.15, 49.29, -123.15,
-  49.27,
+  -123.15, 49.27, -123.1, 49.27, -123.1, 49.29, -123.15, 49.29, -123.15, 49.27,
 ]
 
 // --- is_valid_polygon ---
