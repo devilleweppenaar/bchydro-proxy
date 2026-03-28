@@ -1,3 +1,9 @@
+# Gleam
+build/
+
+# Claude Code local settings (personal overrides, not project-level)
+.claude/settings.local.json
+
 # Wrangler
 .wrangler/
 wrangler.toml.local
@@ -5,7 +11,7 @@ wrangler.toml.local
 # Local development environment variables (secrets)
 .dev.vars
 
-# Node modules (if you add dependencies later)
+# Node / npm
 node_modules/
 
 # Logs
