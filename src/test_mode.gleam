@@ -33,7 +33,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
   let one_hour = 3_600_000
   let two_hours = 7_200_000
   let date_off = now_ms - one_hour
-  let date_on = now_ms + two_hours
+  let date_on = Some(now_ms + two_hours)
 
   case scenario {
     SingleOutage -> [
@@ -50,7 +50,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         last_updated: now_ms,
         region_name: "Lower Mainland",
         show_etr: True,
-        crew_etr: Some(date_on),
+        crew_etr: date_on,
         latitude: 49.2827,
         longitude: -123.1207,
         polygon: vancouver_downtown_polygon(),
@@ -71,7 +71,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         last_updated: now_ms,
         region_name: "Vancouver Island",
         show_etr: True,
-        crew_etr: Some(date_on),
+        crew_etr: date_on,
         latitude: 48.4284,
         longitude: -123.3656,
         polygon: victoria_polygon(),
@@ -92,7 +92,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         last_updated: now_ms,
         region_name: "Lower Mainland",
         show_etr: True,
-        crew_etr: Some(date_on),
+        crew_etr: date_on,
         latitude: 49.2827,
         longitude: -123.1207,
         polygon: vancouver_downtown_polygon(),
@@ -106,7 +106,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         crew_status: "ASSIGNED",
         crew_status_description: "Crew assigned",
         date_off: now_ms - one_hour - 1_800_000,
-        date_on: now_ms + two_hours + 1_800_000,
+        date_on: Some(now_ms + two_hours + 1_800_000),
         last_updated: now_ms - 900_000,
         region_name: "Lower Mainland",
         show_etr: True,

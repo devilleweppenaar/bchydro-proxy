@@ -1,6 +1,9 @@
 // Cloudflare Workers FFI — JavaScript bindings for Gleam
 // Handles platform-specific APIs: Request/Response, Env, Cache, fetch
 
+// Gleam's Result classes must be used so pattern matching (instanceof Ok/Error) works.
+import { Ok, Error as GleamError } from "../gleam_stdlib/gleam.mjs";
+
 const BCHYDRO_API_URL =
   "https://www.bchydro.com/power-outages/app/outages-map-data.json";
 const CACHE_KEY = "https://cache.bchydro-proxy.internal/outages";
@@ -30,7 +33,6 @@ export function make_response(body, status, headers) {
 
 // Fetches BC Hydro outages, using Cloudflare's Cache API as a server-side cache.
 // Returns: Promise(Result(#(json_string, was_cached, max_age_seconds), error_message))
-// Gleam Result: { isOk: true, 0: value } | { isOk: false, 0: error }
 // Gleam tuple #(a, b, c): plain JS array [a, b, c]
 export async function fetch_outages_with_cache(env) {
   const maxAge = parseInt(env.CACHE_MAX_AGE || "300");
@@ -40,7 +42,7 @@ export async function fetch_outages_with_cache(env) {
   if (cached) {
     console.log("Cache hit - using cached data");
     const data = await cached.text();
-    return { isOk: true, 0: [data, true, maxAge] };
+    return new Ok([data, true, maxAge]);
   }
 
   console.log("Fetching from BC Hydro API");
@@ -49,7 +51,7 @@ export async function fetch_outages_with_cache(env) {
   });
 
   if (!response.ok) {
-    return { isOk: false, 0: `BC Hydro API returned ${response.status}` };
+    return new GleamError(`BC Hydro API returned ${response.status}`);
   }
 
   const data = await response.text();
@@ -64,7 +66,7 @@ export async function fetch_outages_with_cache(env) {
     }),
   );
 
-  return { isOk: true, 0: [data, false, maxAge] };
+  return new Ok([data, false, maxAge]);
 }
 
 export function now_ms() {

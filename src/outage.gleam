@@ -1,5 +1,6 @@
 import crew
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/option.{type Option}
 
@@ -13,7 +14,7 @@ pub type Outage {
     crew_status: String,
     crew_status_description: String,
     date_off: Int,
-    date_on: Int,
+    date_on: Option(Int),
     last_updated: Int,
     region_name: String,
     show_etr: Bool,
@@ -26,7 +27,8 @@ pub type Outage {
 
 /// Decoder for a single outage from the BC Hydro API JSON response.
 pub fn decoder() -> decode.Decoder(Outage) {
-  use id <- decode.field("id", decode.string)
+  use id_int <- decode.field("id", decode.int)
+  let id = int.to_string(id_int)
   use municipality <- decode.field("municipality", decode.string)
   use area <- decode.field("area", decode.string)
   use cause <- decode.field("cause", decode.string)
@@ -37,7 +39,7 @@ pub fn decoder() -> decode.Decoder(Outage) {
     decode.string,
   )
   use date_off <- decode.field("dateOff", decode.int)
-  use date_on <- decode.field("dateOn", decode.int)
+  use date_on <- decode.field("dateOn", decode.optional(decode.int))
   use last_updated <- decode.field("lastUpdated", decode.int)
   use region_name <- decode.field("regionName", decode.string)
   use show_etr <- decode.field("showEtr", decode.bool)
@@ -82,7 +84,7 @@ pub fn encode_for_response(o: Outage) -> json.Json {
     #("crewStatusDescription", json.string(o.crew_status_description)),
     #("crewStatusDetail", json.nullable(detail, json.string)),
     #("dateOff", json.int(o.date_off)),
-    #("dateOn", json.int(o.date_on)),
+    #("dateOn", json.nullable(o.date_on, json.int)),
     #("lastUpdated", json.int(o.last_updated)),
     #("regionName", json.string(o.region_name)),
     #("showEtr", json.bool(o.show_etr)),
