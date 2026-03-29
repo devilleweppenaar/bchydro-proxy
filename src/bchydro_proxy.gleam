@@ -9,6 +9,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/uri
 import outage
 import polygon
+import summary
 import test_mode
 
 // Opaque types for Cloudflare Workers platform objects.
@@ -94,8 +95,9 @@ fn handle_get(request: Request, env: Env) -> Promise(Response) {
       ))
 
     test_mode.TestModeActive(scenario) -> {
-      let outages = test_mode.test_outages(scenario, ffi_now_ms())
-      let body = build_response_body(False, 49.2827, -123.1207, outages)
+      let now = ffi_now_ms()
+      let outages = test_mode.test_outages(scenario, now)
+      let body = build_response_body(False, 49.2827, -123.1207, outages, now)
       promise.resolve(
         make_json_response(body, 200, [
           #("Cache-Control", "no-cache"),
@@ -137,7 +139,8 @@ fn fetch_and_respond(lat: Float, lon: Float, env: Env) -> Promise(Response) {
       Error(_) ->
         promise.resolve(Error("Failed to parse BC Hydro API response"))
       Ok(all_outages) -> {
-        let body = build_response_body(cache_hit, lat, lon, all_outages)
+        let now = ffi_now_ms()
+        let body = build_response_body(cache_hit, lat, lon, all_outages, now)
         let client_max_age = int.min(60, cache_max_age)
         promise.resolve(
           Ok(
@@ -167,6 +170,7 @@ fn build_response_body(
   lat: Float,
   lon: Float,
   all_outages: List(outage.Outage),
+  now_ms: Int,
 ) -> String {
   let affected =
     list.filter(all_outages, fn(o) {
@@ -178,6 +182,7 @@ fn build_response_body(
 
   json.to_string(
     json.object([
+      #("summary", json.string(summary.build_summary(affected, now_ms))),
       #("cached", json.bool(cache_hit)),
       #(
         "coordinates",

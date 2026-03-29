@@ -65,6 +65,7 @@ All mock outage data includes `(TEST DATA)` in the `cause` field.
 
 ```json
 {
+  "summary": "There is an outage in your area. Power has been out for about 2 hours due to equipment failure. A crew is on site. Power is expected to be restored in about 30 minutes.",
   "cached": false,
   "coordinates": { "latitude": 49.2827, "longitude": -123.1207 },
   "totalOutages": 42,
@@ -103,6 +104,89 @@ All mock outage data includes `(TEST DATA)` in the `cause` field.
 | `SUSPENDED` | Crew needed different equipment/resources |
 
 Unknown status → `crewStatusDetail` is `null`.
+
+## Summary Field
+
+Every successful `200` response includes a top-level `summary` string. It is a single natural language sentence (or short paragraph) suitable for direct display on a mobile screen or readout by a voice assistant (e.g. Siri). Error responses do not include `summary`.
+
+The summary is generated from the outages affecting the queried location (`affectingYou`), not the full outage list.
+
+### Scenarios
+
+| Condition | Summary |
+|---|---|
+| No outages | `"There are no outages in your area."` |
+| One outage | `"There is an outage in your area. Power has been out for about {duration}[ due to {cause}]. {crew sentence} {ETR sentence}"` |
+| Multiple outages | `"There are {n} outages in your area. The most significant has been out for about {duration}[ due to {cause}]. {crew sentence} {ETR sentence}"` |
+
+For multiple outages, the most significant is the one with the highest `numCustomersOut`.
+
+### Duration Format
+
+Durations use natural phrasing relative to the current time. No clock times are included.
+
+- Less than 60 seconds → `"less than a minute"`
+- 1–59 minutes → `"about {n} minute(s)"`
+- Exact hours → `"about {n} hour(s)"`
+- Hours with remainder → `"about {n} hour(s) and {m} minute(s)"`
+- 1+ days → `"about {n} day(s)"`
+
+The word `"about"` is omitted for the `"less than a minute"` case.
+
+### Crew Sentences
+
+| Status code | Sentence |
+|---|---|
+| `NOT_ASSIGNED` | `"No crew has been assigned yet."` |
+| `ASSIGNED` | `"A crew has been assigned."` |
+| `ENROUTE` | `"A crew is on their way."` |
+| `ONSITE` | `"A crew is on site."` |
+| `SUSPENDED` | `"The repair is currently suspended."` |
+
+Unknown status code → crew sentence is omitted.
+
+### ETR Sentences
+
+ETR is shown only when `showEtr` is `true` and `crewEtr` is non-null. In all other cases (including `showEtr: false` or `crewEtr: null`), the no-ETR phrase is used.
+
+| Condition | Sentence |
+|---|---|
+| ETR available and in the future | `"Power is expected to be restored in {duration}."` |
+| ETR timestamp is in the past | `"Power restoration was expected but may have been delayed."` |
+| No ETR available | `"There is no estimated restoration time yet."` |
+
+### Cause Phrases
+
+Known BC Hydro cause strings are mapped to natural phrases and integrated as `"due to {phrase}"`. Unknown cause strings are appended as a separate sentence: `"The cause is listed as: {lowercase string}."` The causes `"Other"` and `"Under investigation"` are silently omitted.
+
+| Cause string | Phrase |
+|---|---|
+| `Bird contacting our wires` | `a bird contacting the lines` |
+| `Cable fault` | `a cable fault` |
+| `Customer's equipment` | `a customer's equipment issue` |
+| `Equipment failure` | `equipment failure` |
+| `Equipment contact` | `equipment contact` |
+| `Fire` | `a fire` |
+| `Motor vehicle accident` | `a motor vehicle accident` |
+| `Mud or snow slide` | `a mud or snow slide` |
+| `Object on our wires` | `an object on the lines` |
+| `Pole down` | `a downed pole` |
+| `Snow storm` | `a snow storm` |
+| `Substation fault` | `a substation fault` |
+| `Transformer burn out` | `a transformer burnout` |
+| `Transmission circuit failure` | `a transmission circuit failure` |
+| `Tree down across our wires` | `a downed tree on the lines` |
+| `Vandalism` | `vandalism` |
+| `Voltage Problem or Overload` | `a voltage problem or overload` |
+| `Wind storm` | `a wind storm` |
+| `Wire down` | `a downed wire` |
+| `Construction` | `construction work` |
+| `Planned work being done on our equipment` | `planned maintenance` |
+| `Pole replacement` | `a pole replacement` |
+| `Transformer replacement` | `a transformer replacement` |
+| `Work being done on our equipment` | `maintenance work` |
+
+Matching is case-insensitive.
 
 ## Error Responses
 
