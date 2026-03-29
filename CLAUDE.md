@@ -12,7 +12,7 @@ gleam build            # build to build/dev/javascript/
 npm run dev            # start local Wrangler dev server at localhost:8787
 ```
 
-Pre-commit check: `gleam format --check && gleam test` — both must pass locally before pushing.
+Pre-commit check: `gleam format --check && gleam test && gleam build` — all three must pass before committing. Use the `/check` skill to run them in sequence.
 
 ## Git & Commits
 
@@ -22,6 +22,7 @@ Pre-commit check: `gleam format --check && gleam test` — both must pass locall
   - Bad: `Update README` (uppercase), `update readme` (imperative), `feat: add X` (prefix)
 - All commits must be signed (branch protection enforces this on `main`)
 - Rebase to organize commits into logical units before pushing
+- Run `/simplify` before suggesting a commit is ready; commit any simplify changes separately
 
 ## API Design
 
@@ -32,6 +33,16 @@ All responses — including errors — must include an `outages` array:
 ```
 
 Never omit `outages` from any response shape.
+
+## Documentation
+
+Three docs, each with a distinct audience — keep them in sync when making changes:
+
+- `README.md` — user-facing; how to use the API, example responses, test mode, error messages
+- `REQUIREMENTS.md` — implementation reference; what the worker must do, exact strings, response shapes, all scenarios
+- `CLAUDE.md` — developer/AI guidance; commands, conventions, process rules
+
+When changing behaviour, error messages, test mode, or response shapes: update all affected docs in the same commit as the code change.
 
 ## Project Structure
 
@@ -70,9 +81,9 @@ build/                  # Gleam build output (gitignored)
 
 Enabled via `TEST_MODE=true` env var (set in `.dev.vars` locally, `false` in production).
 
-Query parameter `?test=` accepts: `outage`, `no-outage`, `multiple`
+Query parameter `?test=` accepts: `outage`, `no-outage`, `multiple`, `error`
 
-All mock outage data must include `(TEST DATA)` in the cause field. Test responses are never cached.
+Test responses are never cached. The `summary` and `error` fields in test responses are prefixed with `"This is a test. "`. Mock outage cause fields use standard BC Hydro cause strings.
 
 ## Privacy & Security
 
