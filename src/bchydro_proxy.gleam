@@ -56,6 +56,8 @@ const cors_headers: List(#(String, String)) = [
   #("Access-Control-Allow-Headers", "Content-Type"),
 ]
 
+const test_prefix = "This is a test. "
+
 // --- Entry point (exported to Cloudflare Worker via src/worker.js) ---
 
 pub fn handle(request: Request, env: Env) -> Promise(Response) {
@@ -97,7 +99,7 @@ fn handle_get(request: Request, env: Env) -> Promise(Response) {
     test_mode.TestModeError ->
       promise.resolve(make_error_response(
         500,
-        "This is a test. The BC Hydro outage service returned an error.",
+        test_prefix <> "The BC Hydro outage service returned an error.",
       ))
 
     test_mode.TestModeActive(scenario) -> {
@@ -110,7 +112,7 @@ fn handle_get(request: Request, env: Env) -> Promise(Response) {
           -123.1207,
           outages,
           now,
-          "This is a test. ",
+          test_prefix,
         )
       promise.resolve(
         make_json_response(body, 200, [
