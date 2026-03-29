@@ -82,3 +82,24 @@ pub fn crew_status_detail_enroute_content_test() {
   crew.crew_status_detail(crew.EnRoute)
   |> should.equal("A crew is on their way to investigate your outage.")
 }
+
+pub fn crew_status_detail_assigned_content_test() {
+  crew.crew_status_detail(crew.Assigned)
+  |> should.equal(
+    "A crew has been assigned to the area and your outage is on their list to tackle when they can.",
+  )
+}
+
+pub fn crew_status_detail_onsite_content_test() {
+  crew.crew_status_detail(crew.OnSite)
+  |> should.equal(
+    "A crew is working to investigate the cause of the outage and determine the required repairs and we'll have an estimated time of restoration (ETR) soon.",
+  )
+}
+
+pub fn crew_status_detail_suspended_content_test() {
+  crew.crew_status_detail(crew.Suspended)
+  |> should.equal(
+    "The initial crew that arrived and assessed the problem needed different equipment. This usually means heavy equipment or materials like new poles, or additional personnel to tackle the problem and it's not currently assigned to a specific crew.",
+  )
+}

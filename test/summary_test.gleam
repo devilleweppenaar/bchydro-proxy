@@ -91,6 +91,13 @@ pub fn single_outage_skip_cause_test() {
   |> should.be_false
 }
 
+pub fn single_outage_unknown_crew_status_omits_crew_sentence_test() {
+  let o = Outage(..base_outage(now_ms), crew_status: "UNKNOWN_STATUS")
+  let result = summary.build_summary([o], now_ms, "")
+  string.contains(result, "crew")
+  |> should.be_false
+}
+
 pub fn single_outage_no_etr_when_show_etr_false_test() {
   let o = Outage(..base_outage(now_ms), show_etr: False, crew_etr: option.None)
   let result = summary.build_summary([o], now_ms, "")
