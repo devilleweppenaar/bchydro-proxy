@@ -1,3 +1,8 @@
+---
+name: new-module
+description: Add a new Gleam module to this project. Creates src/<name>.gleam, test/<name>_test.gleam, and FFI bindings if needed. Use when the user asks to add a new module, feature, or component.
+---
+
 Add a new Gleam module to this project. Follow these steps:
 
 1. Create `src/<module_name>.gleam` with the module's public types and functions.

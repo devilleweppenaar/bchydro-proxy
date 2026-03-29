@@ -1,4 +1,8 @@
-# /requirements
+---
+name: requirements
+description: Gather and document requirements before implementing a feature, change, or fix. Updates REQUIREMENTS.md through a structured discovery process. Use before any implementation begins.
+disable-model-invocation: true
+---
 
 Use this skill when the user wants to add a feature, change behaviour, or fix a problem — before any implementation begins.
 

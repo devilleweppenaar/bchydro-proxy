@@ -1,3 +1,8 @@
+---
+name: check
+description: Run the full quality check for this Gleam project (format, tests, build) in sequence. Use before committing or when verifying the project is in a clean state.
+---
+
 Run the full quality check for this Gleam project in sequence:
 
 1. `gleam format --check` — verify all Gleam source files are correctly formatted. If this fails, tell the user to run `gleam format` to fix it.
