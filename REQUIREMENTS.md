@@ -96,17 +96,20 @@ Mock outage cause fields use standard BC Hydro cause strings (no special marker)
 }
 ```
 
-## Crew Status Codes → Detail
+## Crew Status Fields
 
-| Code | Meaning |
+Each outage includes two crew status fields:
+
+- `crewStatusDescription` — raw string passed through from the BC Hydro API (e.g. `"Crew on-site"`)
+- `crewStatusDetail` — generated human-readable sentence based on `crewStatus` code (see table below); `null` for unknown codes
+
+| Code | `crewStatusDetail` string |
 |---|---|
-| `NOT_ASSIGNED` | No crew yet; may have been pulled for emergency |
-| `ASSIGNED` | Crew assigned, on their list |
-| `ENROUTE` | Crew on the way |
-| `ONSITE` | Crew investigating, ETR coming soon |
-| `SUSPENDED` | Crew needed different equipment/resources |
-
-Unknown status → `crewStatusDetail` is `null`.
+| `NOT_ASSIGNED` | `"A crew hasn't been assigned to the outage yet. We're working around the clock to get power restored but we don't have updates at this point. If the status was previously assigned but changed back to not-assigned, the crew may have been called away to address an immediate safety issue or emergency, other work took longer than anticipated, or additional damage was found and we had to shift resources."` |
+| `ASSIGNED` | `"A crew has been assigned to the area and your outage is on their list to tackle when they can."` |
+| `ENROUTE` | `"A crew is on their way to investigate your outage."` |
+| `ONSITE` | `"A crew is working to investigate the cause of the outage and determine the required repairs and we'll have an estimated time of restoration (ETR) soon."` |
+| `SUSPENDED` | `"The initial crew that arrived and assessed the problem needed different equipment. This usually means heavy equipment or materials like new poles, or additional personnel to tackle the problem and it's not currently assigned to a specific crew."` |
 
 ## Summary Field
 

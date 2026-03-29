@@ -1,77 +1,59 @@
-# BC Hydro Proxy Worker
+# BC Hydro Proxy
 
-A Cloudflare Worker that proxies BC Hydro outage data and filters outages by geographic location.
+A Cloudflare Worker that checks for BC Hydro power outages at your location. Send it your coordinates and it returns a plain-language summary along with structured outage data.
 
-## Features
-
-- **Location-based filtering**: Query outages affecting specific coordinates (latitude/longitude)
-- **Server-side caching**: Configurable cache TTL to reduce API calls
-- **CORS enabled**: Works with web apps and Apple Shortcuts
-- **Crew status details**: Human-readable descriptions of crew status codes
-- **Fully tested**: 80+ unit tests covering all helper functions
-
-## Project Structure
+## Usage
 
 ```
-src/
-  ├── index.js              # Main Worker entry point
-  └── helpers/              # Coordinate validation, polygon geometry, status mappings
-
-tests/                       # Unit tests for all helper modules
+GET /?lat={latitude}&lon={longitude}
 ```
 
-## Installation
+### Getting Your Coordinates
 
-```bash
-npm install
-```
+You can get your coordinates from Google Maps or Apple Maps by searching for your address and viewing the location details.
 
-## Local Development
+### Query Parameters
 
-### Running the Worker Locally
-
-Start the local development server with Wrangler:
-
-```bash
-npm run dev
-```
-
-The worker will be available at `http://localhost:8787/?lat=X&lon=Y`
-
-For more details on local development, testing, and debugging, see the [Wrangler documentation](https://developers.cloudflare.com/workers/testing/local-development/).
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `lat` | Yes | Latitude (decimal degrees) |
+| `lon` | Yes | Longitude (decimal degrees) |
+| `test` | No | Test scenario — see [Test Mode](#test-mode) |
 
 ### Example Request
 
 ```bash
-curl "http://localhost:8787/?lat=49.2827&lon=-123.1207" | jq .
+curl "https://your-worker.example.com/?lat=49.2827&lon=-123.1207" | jq .
 ```
 
 ### Example Response
 
 ```json
 {
+  "summary": "There is an outage in your area. Power has been out for about 2 hours due to equipment failure. A crew is on site. Power is expected to be restored in about 30 minutes.",
   "cached": false,
   "coordinates": {
     "latitude": 49.2827,
     "longitude": -123.1207
   },
   "totalOutages": 42,
-  "affectingYou": 2,
+  "affectingYou": 1,
   "outages": [
     {
-      "id": "outage-123",
+      "id": "12345",
       "municipality": "Vancouver",
       "area": "Downtown",
       "cause": "Equipment failure",
       "numCustomersOut": 1500,
       "crewStatus": "ONSITE",
-      "crewStatusDetail": "A crew is working to investigate...",
-      "dateOff": "2025-01-15T14:30:00Z",
-      "dateOn": "2025-01-15T16:00:00Z",
-      "lastUpdated": "2025-01-15T14:45:00Z",
+      "crewStatusDescription": "Crew on-site",
+      "crewStatusDetail": "Crew members are on site and investigating the problem.",
+      "dateOff": 1234567890000,
+      "dateOn": 1234567890000,
+      "lastUpdated": 1234567890000,
       "regionName": "Lower Mainland",
       "showEtr": true,
-      "crewEtr": "2025-01-15T16:00:00Z",
+      "crewEtr": 1234567890000,
       "latitude": 49.283,
       "longitude": -123.121
     }
@@ -79,125 +61,57 @@ curl "http://localhost:8787/?lat=49.2827&lon=-123.1207" | jq .
 }
 ```
 
-## Testing
+The `summary` field is a plain-language description suitable for display or voice readout. Timestamps are Unix milliseconds. When there are no outages at your location, `affectingYou` is `0` and `outages` is empty.
 
-Run the test suite:
+## Error Responses
 
-```bash
-npm test                    # Run all tests
-npm run test:watch         # Run tests in watch mode
+All error responses include an `outages` array.
+
+**Missing or invalid coordinates** (400):
+```json
+{ "error": "Your coordinates are missing or invalid. Latitude and longitude are required.", "outages": [] }
 ```
 
-## Configuration
-
-Update `CACHE_MAX_AGE` in `wrangler.toml` to customize the server cache duration (default: 300 seconds).
-
-## API
-
-### Query Parameters
-
-- `lat` (required): Latitude (-90 to 90)
-- `lon` (required): Longitude (-180 to 180)
-- `test` (optional): Test mode (requires `TEST_MODE=true` environment variable)
-  - `outage` - Simulate an outage affecting your coordinates
-  - `no-outage` - Simulate no outages affecting your coordinates
-  - `multiple` - Simulate multiple outages
-
-### Response Fields
-
-- `cached` - Boolean indicating if response was served from cache
-- `coordinates` - Echo of requested coordinates
-- `totalOutages` - Total number of active outages in BC
-- `affectingYou` - Number of outages affecting the specified coordinates
-- `outages` - Array of affected outages with detailed information
-
-### Error Responses
-
-**Missing/Invalid Coordinates** (400):
+**Outside BC service area** (400):
 ```json
-{
-  "error": "Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters",
-  "outages": []
-}
+{ "error": "Your coordinates are outside the BC Hydro service area.", "outages": [] }
 ```
 
-**Coordinates Outside BC Service Area** (400):
+**Service error** (500):
 ```json
-{
-  "error": "Coordinates outside BC Hydro service area (British Columbia, Canada)",
-  "outages": []
-}
-```
-
-**Server Error** (500):
-```json
-{
-  "error": "Error message details",
-  "outages": []
-}
+{ "error": "The BC Hydro outage service returned an error.", "outages": [] }
 ```
 
 ## Test Mode
 
-Test mode allows you to simulate outage scenarios for testing without waiting for real outages.
+Test mode lets you simulate outage scenarios without waiting for a real outage. It requires `TEST_MODE=true` to be set on the worker (enabled by default in local development).
 
-### Enabling Test Mode
+Use the `test` query parameter:
 
-**Local Development:**
-Add `TEST_MODE=true` to your `.dev.vars` file (already configured by default).
-
-**Production:**
-Set `TEST_MODE=false` in Cloudflare Dashboard (default in `wrangler.toml`).
-
-### Using Test Mode
-
-Test mode is only available when `TEST_MODE=true`. Use the `test` query parameter:
+| Value | Description |
+|-------|-------------|
+| `outage` | One outage affecting your coordinates |
+| `no-outage` | One outage elsewhere in BC, not affecting you |
+| `multiple` | Three outages — two affecting you, one elsewhere |
+| `error` | Simulated service error |
 
 ```bash
-# Simulate an outage affecting your coordinates
 curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=outage"
-
-# Simulate no outages affecting your coordinates (outage exists elsewhere in BC)
-curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=no-outage"
-
-# Simulate multiple outages (2 affecting you, 1 not)
-curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=multiple"
 ```
 
-### Test Data
+Test responses are never cached. The `summary` and `error` fields in test responses begin with `"This is a test."`.
 
-All test data includes `(TEST DATA)` in the cause field to clearly identify simulated outages. Test mode bypasses the BC Hydro API and returns mock data instead.
+## Caching
 
-## Data Source
+Outage data is cached server-side for up to 5 minutes (configurable via `CACHE_MAX_AGE`). The `cached` field in the response indicates whether data came from cache.
 
-The worker proxies data from BC Hydro's public API:
+## Local Development
+
+```bash
+npm run dev    # start local server at http://localhost:8787
+gleam test     # run tests
 ```
-https://www.bchydro.com/power-outages/app/outages-map-data.json
-```
-
-## Caching Strategy
-
-- **Server cache**: Configurable via `CACHE_MAX_AGE` (default: 300 seconds)
-- **Client cache**: `Cache-Control: public, max-age=60` (capped at 1 minute)
-- **Cache indicator**: `cached` field in response shows if data came from cache
-
-First request: `cached: false`  
-Subsequent requests (within TTL): `cached: true`
-
-## Deployment
-
-For deployment instructions, see the [Cloudflare Workers deployment documentation](https://developers.cloudflare.com/workers/deployment-trigger/).
-
-## CI/CD
-
-GitHub Actions runs automated checks on every push and pull request:
-
-- **Linting**: Code quality checks with ESLint
-- **Testing**: Tests run against Node.js 22.x and 24.x (LTS versions)
-- **Gating**: All checks must pass before code can be deployed
-
-Checks run on all pushes to `main` and pull requests into `main`. For more details, see the workflow configuration in `.github/workflows/ci.yaml`.
 
 ## License
 
-Unlicense (public domain). See [LICENSE](LICENSE) file for details.
+Unlicense (public domain). See [LICENSE](LICENSE) for details.
