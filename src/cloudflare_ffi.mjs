@@ -51,7 +51,7 @@ export async function fetch_outages_with_cache(env) {
   });
 
   if (!response.ok) {
-    return new GleamError(`BC Hydro API returned ${response.status}`);
+    return new GleamError(`The BC Hydro outage service returned an error.`);
   }
 
   const data = await response.text();

@@ -129,7 +129,7 @@ fn handle_normal(params: List(#(String, String)), env: Env) -> Promise(Response)
     Error(Nil) ->
       promise.resolve(make_error_response(
         400,
-        "Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters",
+        "Your coordinates are missing or invalid. Latitude and longitude are required.",
       ))
 
     Ok(#(lat, lon)) ->
@@ -137,7 +137,7 @@ fn handle_normal(params: List(#(String, String)), env: Env) -> Promise(Response)
         False ->
           promise.resolve(make_error_response(
             400,
-            "Coordinates outside BC Hydro service area (British Columbia, Canada)",
+            "Your coordinates are outside the BC Hydro service area.",
           ))
 
         True -> fetch_and_respond(lat, lon, env)
@@ -151,7 +151,7 @@ fn fetch_and_respond(lat: Float, lon: Float, env: Env) -> Promise(Response) {
     let #(json_str, cache_hit, cache_max_age) = cache_data
     case json.parse(json_str, decode.list(outage.decoder())) {
       Error(_) ->
-        promise.resolve(Error("Failed to parse BC Hydro API response"))
+        promise.resolve(Error("The BC Hydro outage data could not be read."))
       Ok(all_outages) -> {
         let now = ffi_now_ms()
         let body =

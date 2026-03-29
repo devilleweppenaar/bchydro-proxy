@@ -197,11 +197,11 @@ All errors include `"outages": []`.
 
 | Condition | Status | Message |
 |---|---|---|
-| Invalid/missing coords | 400 | `"Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters"` |
-| Outside BC area | 400 | `"Coordinates outside BC Hydro service area (British Columbia, Canada)"` |
+| Invalid/missing coords | 400 | `"Your coordinates are missing or invalid. Latitude and longitude are required."` |
+| Outside BC area | 400 | `"Your coordinates are outside the BC Hydro service area."` |
 | Invalid test param | 400 | `"Invalid test mode. Valid options: outage, no-outage, multiple, error"` |
 | Test error scenario | 500 | `"This is a test. The BC Hydro outage service returned an error."` |
-| BC Hydro API error | 500 | `"BC Hydro API returned {status}"` |
+| BC Hydro API error | 500 | `"The BC Hydro outage service returned an error."` |
 | Unhandled exception | 500 | error message string |
 
 ## Environment Variables
