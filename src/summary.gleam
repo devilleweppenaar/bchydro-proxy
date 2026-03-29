@@ -11,10 +11,16 @@ type CauseResult {
   SkipCause
 }
 
-/// Builds a single natural language summary for the given list of outages
-/// affecting the queried location. Intended for direct display or voice readout.
-pub fn build_summary(outages: List(Outage), now_ms: Int) -> String {
-  case outages {
+/// Builds a natural language summary for the given list of outages affecting
+/// the queried location. Intended for direct display or voice readout.
+/// `prefix` is prepended to the result (use `""` for normal mode,
+/// `"This is a test. "` for test mode responses).
+pub fn build_summary(
+  outages: List(Outage),
+  now_ms: Int,
+  prefix: String,
+) -> String {
+  let base = case outages {
     [] -> "There are no outages in your area."
     [single] ->
       assemble(
@@ -42,6 +48,7 @@ pub fn build_summary(outages: List(Outage), now_ms: Int) -> String {
       }
     }
   }
+  prefix <> base
 }
 
 fn assemble(

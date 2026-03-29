@@ -14,6 +14,8 @@ pub type TestModeResult {
   TestModeInvalidParam
   /// TEST_MODE is true and the scenario is valid.
   TestModeActive(TestScenario)
+  /// TEST_MODE is true and ?test=error — returns a simulated error response.
+  TestModeError
 }
 
 /// Determine the test mode result given the TEST_MODE flag and the ?test= param value.
@@ -23,6 +25,7 @@ pub fn check_test_mode(is_enabled: Bool, test_param: String) -> TestModeResult {
     True, "outage" -> TestModeActive(SingleOutage)
     True, "no-outage" -> TestModeActive(NoOutage)
     True, "multiple" -> TestModeActive(MultipleOutages)
+    True, "error" -> TestModeError
     True, _ -> TestModeInvalidParam
   }
 }
@@ -41,7 +44,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         id: "test-outage-001",
         municipality: "Vancouver",
         area: "Downtown",
-        cause: "Equipment failure (TEST DATA)",
+        cause: "Equipment failure",
         num_customers_out: 1500,
         crew_status: "ONSITE",
         crew_status_description: "Crew on-site",
@@ -62,7 +65,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         id: "test-outage-002",
         municipality: "Victoria",
         area: "James Bay",
-        cause: "Tree down across our wires (TEST DATA)",
+        cause: "Tree down across our wires",
         num_customers_out: 245,
         crew_status: "ENROUTE",
         crew_status_description: "Crew en route",
@@ -83,7 +86,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         id: "test-outage-003",
         municipality: "Vancouver",
         area: "Downtown Core",
-        cause: "Underground cable fault (TEST DATA)",
+        cause: "Cable fault",
         num_customers_out: 850,
         crew_status: "ONSITE",
         crew_status_description: "Crew on-site",
@@ -101,7 +104,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         id: "test-outage-004",
         municipality: "Vancouver",
         area: "West End",
-        cause: "Motor vehicle accident (TEST DATA)",
+        cause: "Motor vehicle accident",
         num_customers_out: 420,
         crew_status: "ASSIGNED",
         crew_status_description: "Crew assigned",
@@ -122,7 +125,7 @@ pub fn test_outages(scenario: TestScenario, now_ms: Int) -> List(Outage) {
         id: "test-outage-005",
         municipality: "Kelowna",
         area: "Rutland",
-        cause: "Planned maintenance (TEST DATA)",
+        cause: "Planned work being done on our equipment",
         num_customers_out: 125,
         crew_status: "NOT_ASSIGNED",
         crew_status_description: "Not assigned",

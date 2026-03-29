@@ -28,8 +28,13 @@ fn base_outage(now: Int) -> Outage {
 }
 
 pub fn no_outages_returns_no_outage_message_test() {
-  summary.build_summary([], now_ms)
+  summary.build_summary([], now_ms, "")
   |> should.equal("There are no outages in your area.")
+}
+
+pub fn prefix_is_prepended_to_summary_test() {
+  summary.build_summary([], now_ms, "This is a test. ")
+  |> should.equal("This is a test. There are no outages in your area.")
 }
 
 pub fn single_outage_known_cause_with_etr_test() {
@@ -42,7 +47,7 @@ pub fn single_outage_known_cause_with_etr_test() {
       crew_status: "ONSITE",
       date_off: now_ms - 7_200_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "equipment failure")
   |> should.be_true
   string.contains(result, "about 2 hours")
@@ -62,7 +67,7 @@ pub fn single_outage_unknown_cause_test() {
       crew_status: "NOT_ASSIGNED",
       date_off: now_ms - 3_600_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "The cause is listed as: mysterious cause")
   |> should.be_true
   string.contains(result, "No crew has been assigned yet.")
@@ -78,7 +83,7 @@ pub fn single_outage_skip_cause_test() {
       crew_status: "ASSIGNED",
       date_off: now_ms - 3_600_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "A crew has been assigned.")
   |> should.be_true
   // "Other" is a SkipCause — no cause sentence should appear
@@ -88,14 +93,14 @@ pub fn single_outage_skip_cause_test() {
 
 pub fn single_outage_no_etr_when_show_etr_false_test() {
   let o = Outage(..base_outage(now_ms), show_etr: False, crew_etr: option.None)
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "There is no estimated restoration time yet.")
   |> should.be_true
 }
 
 pub fn single_outage_no_etr_when_crew_etr_null_test() {
   let o = Outage(..base_outage(now_ms), show_etr: True, crew_etr: option.None)
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "There is no estimated restoration time yet.")
   |> should.be_true
 }
@@ -107,7 +112,7 @@ pub fn single_outage_etr_in_past_test() {
       show_etr: True,
       crew_etr: option.Some(now_ms - 60_000),
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(
     result,
     "Power restoration was expected but may have been delayed.",
@@ -118,7 +123,7 @@ pub fn single_outage_etr_in_past_test() {
 pub fn multiple_outages_shows_count_test() {
   let o1 = base_outage(now_ms)
   let o2 = Outage(..base_outage(now_ms), id: "test-002", num_customers_out: 50)
-  let result = summary.build_summary([o1, o2], now_ms)
+  let result = summary.build_summary([o1, o2], now_ms, "")
   string.contains(result, "There are 2 outages")
   |> should.be_true
 }
@@ -138,7 +143,7 @@ pub fn multiple_outages_details_most_significant_test() {
       num_customers_out: 500,
       cause: "Wire down",
     )
-  let result = summary.build_summary([o1, o2], now_ms)
+  let result = summary.build_summary([o1, o2], now_ms, "")
   string.contains(result, "There are 2 outages")
   |> should.be_true
   string.contains(result, "a downed wire")
@@ -154,7 +159,7 @@ pub fn duration_less_than_minute_test() {
       crew_etr: option.None,
       date_off: now_ms - 30_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "less than a minute")
   |> should.be_true
 }
@@ -168,7 +173,7 @@ pub fn duration_exact_minutes_test() {
       crew_etr: option.None,
       date_off: now_ms - 300_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "about 5 minutes")
   |> should.be_true
 }
@@ -182,7 +187,7 @@ pub fn duration_exact_one_hour_test() {
       crew_etr: option.None,
       date_off: now_ms - 3_600_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "about 1 hour")
   |> should.be_true
 }
@@ -196,7 +201,7 @@ pub fn duration_hours_and_minutes_test() {
       crew_etr: option.None,
       date_off: now_ms - 5_400_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "about 1 hour and 30 minutes")
   |> should.be_true
 }
@@ -210,7 +215,7 @@ pub fn duration_plural_hours_test() {
       crew_etr: option.None,
       date_off: now_ms - 7_200_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "about 2 hours")
   |> should.be_true
 }
@@ -224,7 +229,7 @@ pub fn duration_days_test() {
       crew_etr: option.None,
       date_off: now_ms - 172_800_000,
     )
-  let result = summary.build_summary([o], now_ms)
+  let result = summary.build_summary([o], now_ms, "")
   string.contains(result, "about 2 days")
   |> should.be_true
 }

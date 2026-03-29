@@ -28,14 +28,17 @@ Test mode is enabled when both:
 - `TEST_MODE` env var equals `"true"`
 - `?test=` query param is present
 
-Valid `?test=` values: `outage`, `no-outage`, `multiple`
+Valid `?test=` values: `outage`, `no-outage`, `multiple`, `error`
 
 If `TEST_MODE=true` and `?test=` is present but invalid → HTTP 400 with error message.
 If `TEST_MODE=false` and `?test=` is present → ignore, proceed with normal flow.
-If test mode is valid → skip coordinate parsing/validation, use fixed Vancouver coords (49.2827, -123.1207), return mock data.
+If `?test=outage|no-outage|multiple` → skip coordinate parsing/validation, use fixed Vancouver coords (49.2827, -123.1207), return mock data.
+If `?test=error` → skip coordinate parsing/validation, return HTTP 500 error response.
 
 Test responses are never cached (`Cache-Control: no-cache`).
-All mock outage data includes `(TEST DATA)` in the `cause` field.
+Test success responses (`outage`, `no-outage`, `multiple`) include `"This is a test. "` as a prefix in the `summary` field.
+Test error responses (`error`) include `"This is a test. "` as a prefix in the `error` field.
+Mock outage cause fields use standard BC Hydro cause strings (no special marker).
 
 ## Caching
 
@@ -196,7 +199,8 @@ All errors include `"outages": []`.
 |---|---|---|
 | Invalid/missing coords | 400 | `"Missing or invalid coordinates. Provide ?lat=XX.XXXX&lon=YY.YYYY query parameters"` |
 | Outside BC area | 400 | `"Coordinates outside BC Hydro service area (British Columbia, Canada)"` |
-| Invalid test param | 400 | `"Invalid test mode. Valid options: outage, no-outage, multiple"` |
+| Invalid test param | 400 | `"Invalid test mode. Valid options: outage, no-outage, multiple, error"` |
+| Test error scenario | 500 | `"This is a test. The BC Hydro outage service returned an error."` |
 | BC Hydro API error | 500 | `"BC Hydro API returned {status}"` |
 | Unhandled exception | 500 | error message string |
 
@@ -209,8 +213,9 @@ All errors include `"outages": []`.
 
 ## Test Data Fixtures
 
-Three test modes produce different mock outage sets, all using generic BC coordinates:
+Four test modes, all using generic BC coordinates:
 
 - `outage` — 1 outage, polygon covers downtown Vancouver (49.2827, -123.1207)
 - `no-outage` — 1 outage in Victoria (48.4284, -123.3656), polygon does NOT cover Vancouver
 - `multiple` — 3 outages: 2 covering Vancouver (different polygons), 1 in Kelowna (49.888, -119.496)
+- `error` — no outage data; returns HTTP 500 with a test error message

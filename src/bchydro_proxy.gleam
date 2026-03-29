@@ -91,13 +91,27 @@ fn handle_get(request: Request, env: Env) -> Promise(Response) {
     test_mode.TestModeInvalidParam ->
       promise.resolve(make_error_response(
         400,
-        "Invalid test mode. Valid options: outage, no-outage, multiple",
+        "Invalid test mode. Valid options: outage, no-outage, multiple, error",
+      ))
+
+    test_mode.TestModeError ->
+      promise.resolve(make_error_response(
+        500,
+        "This is a test. The BC Hydro outage service returned an error.",
       ))
 
     test_mode.TestModeActive(scenario) -> {
       let now = ffi_now_ms()
       let outages = test_mode.test_outages(scenario, now)
-      let body = build_response_body(False, 49.2827, -123.1207, outages, now)
+      let body =
+        build_response_body(
+          False,
+          49.2827,
+          -123.1207,
+          outages,
+          now,
+          "This is a test. ",
+        )
       promise.resolve(
         make_json_response(body, 200, [
           #("Cache-Control", "no-cache"),
@@ -140,7 +154,8 @@ fn fetch_and_respond(lat: Float, lon: Float, env: Env) -> Promise(Response) {
         promise.resolve(Error("Failed to parse BC Hydro API response"))
       Ok(all_outages) -> {
         let now = ffi_now_ms()
-        let body = build_response_body(cache_hit, lat, lon, all_outages, now)
+        let body =
+          build_response_body(cache_hit, lat, lon, all_outages, now, "")
         let client_max_age = int.min(60, cache_max_age)
         promise.resolve(
           Ok(
@@ -171,6 +186,7 @@ fn build_response_body(
   lon: Float,
   all_outages: List(outage.Outage),
   now_ms: Int,
+  summary_prefix: String,
 ) -> String {
   let affected =
     list.filter(all_outages, fn(o) {
@@ -182,7 +198,10 @@ fn build_response_body(
 
   json.to_string(
     json.object([
-      #("summary", json.string(summary.build_summary(affected, now_ms))),
+      #(
+        "summary",
+        json.string(summary.build_summary(affected, now_ms, summary_prefix)),
+      ),
       #("cached", json.bool(cache_hit)),
       #(
         "coordinates",

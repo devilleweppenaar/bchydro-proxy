@@ -48,6 +48,16 @@ pub fn test_mode_active_multiple_test() {
   |> should.equal(test_mode.TestModeActive(test_mode.MultipleOutages))
 }
 
+pub fn test_mode_error_when_enabled_test() {
+  test_mode.check_test_mode(True, "error")
+  |> should.equal(test_mode.TestModeError)
+}
+
+pub fn test_mode_error_disabled_ignores_error_param_test() {
+  test_mode.check_test_mode(False, "error")
+  |> should.equal(test_mode.TestModeDisabled)
+}
+
 // --- test_outages: SingleOutage ---
 
 pub fn single_outage_returns_one_outage_test() {
@@ -56,11 +66,10 @@ pub fn single_outage_returns_one_outage_test() {
   |> should.equal(1)
 }
 
-pub fn single_outage_has_test_data_in_cause_test() {
-  let outages = test_mode.test_outages(test_mode.SingleOutage, now_ms)
-  let assert [outage] = outages
+pub fn single_outage_cause_has_no_test_marker_test() {
+  let assert [outage] = test_mode.test_outages(test_mode.SingleOutage, now_ms)
   string.contains(outage.cause, "(TEST DATA)")
-  |> should.be_true()
+  |> should.be_false()
 }
 
 pub fn single_outage_covers_vancouver_test() {
@@ -83,10 +92,10 @@ pub fn no_outage_returns_one_outage_test() {
   |> should.equal(1)
 }
 
-pub fn no_outage_has_test_data_in_cause_test() {
+pub fn no_outage_cause_has_no_test_marker_test() {
   let assert [outage] = test_mode.test_outages(test_mode.NoOutage, now_ms)
   string.contains(outage.cause, "(TEST DATA)")
-  |> should.be_true()
+  |> should.be_false()
 }
 
 pub fn no_outage_is_victoria_not_vancouver_test() {
@@ -102,9 +111,9 @@ pub fn multiple_outages_returns_three_outages_test() {
   |> should.equal(3)
 }
 
-pub fn multiple_outages_all_have_test_data_in_cause_test() {
+pub fn multiple_outages_causes_have_no_test_marker_test() {
   test_mode.test_outages(test_mode.MultipleOutages, now_ms)
-  |> list.all(fn(o) { string.contains(o.cause, "(TEST DATA)") })
+  |> list.all(fn(o) { !string.contains(o.cause, "(TEST DATA)") })
   |> should.be_true()
 }
 
