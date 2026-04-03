@@ -55,9 +55,10 @@ src/
   crew.gleam            # crew status enum and descriptions
   outage.gleam          # Outage type, JSON decoder, response encoder
   polygon.gleam         # ray-casting point-in-polygon
+  summary.gleam         # builds human-readable outage summary text
   test_mode.gleam       # test mode logic and mock outage fixtures
 test/
-  *_test.gleam          # gleeunit tests (one file per module)
+  *_test.gleam          # gleeunit tests (one per module; outage tests are in bchydro_proxy_test.gleam)
 build/                  # Gleam build output (gitignored)
 ```
 
