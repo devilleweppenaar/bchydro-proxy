@@ -103,7 +103,7 @@ Test responses are never cached. The `summary` and `error` fields in test respon
 
 ## Setup Guide
 
-Visiting `/guide` on the worker redirects to the setup guide. Set `GUIDE_URL` in the Cloudflare Dashboard under **Workers → Settings → Variables**.
+Visiting `/guide` on the worker redirects to the setup guide. Set `GUIDE_URL` in the Cloudflare Dashboard under **Workers → Settings → Variables**. If `GUIDE_URL` is not set, `/guide` returns a 404 with no body.
 
 ## Caching
 

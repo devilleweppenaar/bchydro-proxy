@@ -6,7 +6,7 @@ Reference document for the Gleam implementation. Describes what the worker must 
 
 - Accept `GET` and `OPTIONS` requests only
 - Respond to `OPTIONS` with CORS headers and no body (HTTP 200)
-- Redirect `GET /guide` to the URL in the `GUIDE_URL` environment variable (HTTP 302)
+- Redirect `GET /guide` to the URL in the `GUIDE_URL` environment variable (HTTP 302); if `GUIDE_URL` is not set, return HTTP 404 with no body (this route does not include an `outages` array)
 - All responses include CORS headers: `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, OPTIONS`, `Access-Control-Allow-Headers: Content-Type`
 - All responses (including errors) include an `outages` array
 

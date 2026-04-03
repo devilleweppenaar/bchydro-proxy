@@ -66,9 +66,10 @@ pub fn handle(request: Request, env: Env) -> Promise(Response) {
     _ ->
       case get_path(ffi_request_url(request)) {
         "/guide" ->
-          promise.resolve(
-            make_redirect_response(ffi_get_env_string(env, "GUIDE_URL")),
-          )
+          promise.resolve(case ffi_get_env_string(env, "GUIDE_URL") {
+            "" -> ffi_make_response("", 404, cors_headers)
+            url -> make_redirect_response(url)
+          })
         _ ->
           handle_get(request, env)
           |> promise.rescue(fn(err) {
