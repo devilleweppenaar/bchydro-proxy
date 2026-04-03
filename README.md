@@ -101,6 +101,10 @@ curl "http://localhost:8787/?lat=49.2827&lon=-123.1207&test=outage"
 
 Test responses are never cached. The `summary` and `error` fields in test responses begin with `"This is a test."`.
 
+## Setup Guide
+
+Visiting `/guide` on the worker redirects to the setup guide. Set `GUIDE_URL` in the Cloudflare Dashboard under **Workers → Settings → Variables**.
+
 ## Caching
 
 Outage data is cached server-side for up to 5 minutes (configurable via `CACHE_MAX_AGE`). The `cached` field in the response indicates whether data came from cache.

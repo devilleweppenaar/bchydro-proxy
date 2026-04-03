@@ -64,10 +64,17 @@ pub fn handle(request: Request, env: Env) -> Promise(Response) {
   case ffi_request_method(request) {
     "OPTIONS" -> promise.resolve(ffi_make_response("", 200, cors_headers))
     _ ->
-      handle_get(request, env)
-      |> promise.rescue(fn(err) {
-        make_error_response(500, exception_message(err))
-      })
+      case get_path(ffi_request_url(request)) {
+        "/guide" ->
+          promise.resolve(
+            make_redirect_response(ffi_get_env_string(env, "GUIDE_URL")),
+          )
+        _ ->
+          handle_get(request, env)
+          |> promise.rescue(fn(err) {
+            make_error_response(500, exception_message(err))
+          })
+      }
   }
 }
 
@@ -231,6 +238,10 @@ fn make_json_response(
   ffi_make_response(body, status, headers)
 }
 
+fn make_redirect_response(url: String) -> Response {
+  ffi_make_response("", 302, cors_headers |> list.append([#("Location", url)]))
+}
+
 fn make_error_response(status: Int, message: String) -> Response {
   let body =
     json.to_string(
@@ -243,6 +254,13 @@ fn make_error_response(status: Int, message: String) -> Response {
 }
 
 // --- URL parsing helpers ---
+
+pub fn get_path(url_string: String) -> String {
+  case uri.parse(url_string) {
+    Error(_) -> "/"
+    Ok(parsed) -> parsed.path
+  }
+}
 
 fn parse_query_params(url_string: String) -> List(#(String, String)) {
   case uri.parse(url_string) {
